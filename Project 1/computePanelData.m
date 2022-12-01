@@ -114,5 +114,6 @@ function [gamma,C_l,camber,X,Y,U,V,panel_origin_g] = computePanelData(v_inf,y_0,
             V(i,j) = v_inf_y + v_p_g;
         end
     end
-    
+%     lift = 
+%     disp()
 end
