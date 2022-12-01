@@ -75,8 +75,9 @@ function [gamma,C_l,camber,X,Y,U,V,panel_origin_g] = computePanelData(v_inf,y_0,
 
     % computing v_infinity normal and calculating gamma
     v_inf_norm = zeros(N,1);
-    for g=1:N
-        v_inf_norm(g) = -dot([v_inf_x, v_inf_y], y_g(g,:));
+    for i=1:N
+%         disp(size(y_g))
+        v_inf_norm(i) = -dot([v_inf_x, v_inf_y], y_g(i,:));
     end
     gamma = inv(icm) * v_inf_norm;
 
