@@ -1,4 +1,4 @@
-function [gamma,Cl,camber,X,Y,U,V,panel_o_g] = computePanelData(v_inf,y0,alpha_d,N,grid_res)
+function [gamma,Cl,camber,X,Y,U,V,panel_origin_g] = computePanelData(v_inf,y_0,alpha_d,N,grid_res)
 
 % initializing variables
     alpha_r = alpha_d*(pi/180);
@@ -8,67 +8,40 @@ function [gamma,Cl,camber,X,Y,U,V,panel_o_g] = computePanelData(v_inf,y0,alpha_d
                 
 
 % creating the airfoil (from circle)
-                
-    % airfoil start point
-    xi = 5; 
-    yi = 0;
-    
-    % airfoil length and thickness
-    L = 10; % do not CHANGE
-    %T = for later
-    
-    % airfoil end point
-    xf = xi+L;
-    yf = yi;
-    
-    % circle center x coordinate
-    x0 = L/2;
-    
-    % calculate r
-    r = sqrt((xi-x0)^2+(yi-y0)^2);
-    
-    % initial angle
-    theta_i = 0.5*(180-(2*atand(x0/y0)));
-    
-    % final angle 
-    theta_f = 90+(90-theta_i);
-    
-    % scroll through angles 
-    theta_vect = linspace(theta_i,theta_f,N+1)';
-    
-    % create vector of panel origin points
-    panel_o_g = [r*cosd(theta_vect)+x0+xi,r*sind(theta_vect)+y0]; 
-    
-    % We have to show the camber! JKJK, unless...
-    camber = (max(panel_o_g(:,2)))/L;
+    L = 10; 
+    x_i = 5; y_i = 0;
+    x_f = x_i+L; y_f = y_i;
+    x_0 = x_i + L/2;
+    r = sqrt((x_i-x_0)^2+(y_i-y_0)^2);
+    theta_i = 0.5 * (180-(2 * atand((x_0-x_i)/y_0-y_i)));
+    theta_f = 90 + (90 - theta_i);
+    theta = linspace(theta_i,theta_f,N+1)';
+    panel_origin_g = [r * cosd(theta) + x_0, r * sind(theta)+y_0]; 
+    camber = (max(panel_origin_g(:,2)))/L;
 
 
 % creating the panels
-            
-    PCoords_g = zeros(N,4); 
+    panel_coords_g = zeros(N,4); 
     
-    for e=1:N
-        PCoords_g(e, 1) = panel_o_g(e,1);
-        PCoords_g(e, 2) = panel_o_g(e,2);
-        PCoords_g(e, 3) = panel_o_g(e+1,1);
-        PCoords_g(e, 4) = panel_o_g(e+1,2);
+    for i=1:N
+        panel_coords_g(i, 1) = panel_origin_g(i,1);
+        panel_coords_g(i, 2) = panel_origin_g(i,2);
+        panel_coords_g(i, 3) = panel_origin_g(i+1,1);
+        panel_coords_g(i, 4) = panel_origin_g(i+1,2);
     end
-    %PCoords_g
 
  
-% Panel length NOTE THIS IS A CONSTANT SO YOU CAN REMOVE THE FOR LOOP LATER
-% ON
+% Panel length 
     L = zeros(N,1);
-    for e=1:N 
-        L(e)=sqrt( (PCoords_g(e,1)-PCoords_g(e,3))^2 + (PCoords_g(e,2)-PCoords_g(e,4))^2 );
+    for i=1:N 
+        L(i)=sqrt((panel_coords_g(i,1)-panel_coords_g(i,3))^2 + (panel_coords_g(i,2)-panel_coords_g(i,4))^2);
     end
-    %L
 
 % Collocation points in the Global Coordinate Frame
     x_g = zeros(N,2);
-    for e=1:N
-        x_g(e,1) = (PCoords_g(e,3)-PCoords_g(e,1))/L(e); %i_hat
-        x_g(e,2) = (PCoords_g(e,4)-PCoords_g(e,2))/L(e); %j_hat
+    for i=1:N
+        x_g(i,1) = (panel_coords_g(i,3)-panel_coords_g(i,1))/L(i); 
+        x_g(i,2) = (panel_coords_g(i,4)-panel_coords_g(i,2))/L(i); 
     end
 
     y_g = zeros(N,2);
@@ -76,36 +49,33 @@ function [gamma,Cl,camber,X,Y,U,V,panel_o_g] = computePanelData(v_inf,y0,alpha_d
     y_g = -transpose(y_g);
                 
 % Collocation points in the Global Coordinate Frame
-    Col_g = zeros(N,2);
-    for e=1:N
-        Col_g(e,1) = PCoords_g(e,1) + 0.75*L(e)*x_g(e,1);
-        Col_g(e,2) = PCoords_g(e,2) + 0.75*L(e)*x_g(e,2);
+    collocation_g = zeros(N,2);
+    for i=1:N
+        collocation_g(i,1) = panel_coords_g(i,1) + 0.75 * L(i) * x_g(i,1);
+        collocation_g(i,2) = panel_coords_g(i,2) + 0.75 * L(i) * x_g(i,2);
     end
     
 % CREATING Icm
-
-    for e=1:N
-        for f=1:N
-            
-            % Collocation point location
-            f_Col_x_e = Col_g(f,1) - PCoords_g(e,1);
-            f_Col_y_e = Col_g(f,2) - PCoords_g(e,2);
+    icm = zeros(N, N);
+    for i=1:N
+        for j=1:N
+            % x and y distances
+            x_dist = collocation_g(j,1) - panel_coords_g(i,1);
+            y_dist = collocation_g(j,2) - panel_coords_g(i,2);
     
-            % Panel Velocity (e frame)  
-            v_f_col_x_e = (1/(2*pi)) * (f_Col_y_e / ( (f_Col_y_e)^2 + (f_Col_x_e-.25*L(e))^2 )); 
-            v_f_col_y_e = (-1/(2*pi)) * ((f_Col_x_e-.25*L(e)) / ((f_Col_y_e)^2 + (f_Col_x_e-.25*L(e))^2 ));
+            % Panel Velocity (i frame)  
+            u_p = (1/(2*pi)) * (y_dist / ((y_dist)^2 + (x_dist-.25*L(i))^2)); 
+            v_p = (-1/(2*pi)) * ((x_dist-.25*L(i)) / ((y_dist)^2 + (x_dist-.25*L(i))^2 ));
             
-            % Panel Velocity (g frame)
-            B = inv([x_g(e,1) y_g(e,1); x_g(e,2) y_g(e,2)]);
-            A = [v_f_col_x_e v_f_col_y_e];
-            C = A*B;
+            % Panel Velocity (global frame)
+            B = inv([x_g(i,1) y_g(i,1); x_g(i,2) y_g(i,2)]);
+            A = [u_p v_p];
+            C = A * B;
 
-            % Icm
-            Icm(f,e) = dot(C,y_g(f,:));
+            % icm
+            icm(j,i) = dot(C,y_g(j,:));
         end
     end
-
-    %Icm
 
  % Creating V infinity normal
 
@@ -114,11 +84,9 @@ function [gamma,Cl,camber,X,Y,U,V,panel_o_g] = computePanelData(v_inf,y0,alpha_d
         v_inf_norm(g) = -dot([v_inf_x, v_inf_y], y_g(g,:));
     end
 
-    v_inf_norm;
-
 % calculate gamma
 
-    gamma = inv(Icm)*v_inf_norm;
+    gamma = inv(icm) * v_inf_norm;
 
 % visualize the flow
 
@@ -145,8 +113,8 @@ function [gamma,Cl,camber,X,Y,U,V,panel_o_g] = computePanelData(v_inf,y0,alpha_d
                   %scroll through each panel to find that panels contribution to the x and y velocity at (0,3)  
                   % Find the x and y distance between the first panels origin and the first point on the mesh grid
                   % notably, I'm not saving these
-                  x = XX(i) - panel_o_g(j,1);
-                  y = YY(h) - panel_o_g(j,2);
+                  x = XX(i) - panel_origin_g(j,1);
+                  y = YY(h) - panel_origin_g(j,2);
 
                   %compute and rotate u_p and v_p to the global coordinate frame
 
