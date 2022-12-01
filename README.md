@@ -1,5 +1,5 @@
 # MEAM_5450
-Homework repository for MEAM 5450 (Aerodynamics) class at UPenn
+Homework repository for MEAM 5450 (Aerodynamics) class at UPenn, in collaboration with M.K. Wassink, C. Rudick
 
 <p align="center"><img src="istockphoto-638687756-170667a.jpg" alt="Logo"></p>
 
