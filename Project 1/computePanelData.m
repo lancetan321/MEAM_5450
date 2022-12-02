@@ -5,9 +5,11 @@ function [gamma,C_l,camber,X,Y,U,V,panel_origin_g] = computePanelData(v_inf,y_0,
     v_inf_x = v_inf*cos(alpha_r);
     v_inf_y = v_inf*sin(alpha_r);
     rho = 1.225;
+%     rho = .00237689240;
 
     % creating the airfoil 
     L = 10; 
+%     L = 1.5;
     x_i = 5; y_i = 0;
     x_f = x_i+L; y_f = y_i;
     x_0 = x_i + L/2;
@@ -76,7 +78,6 @@ function [gamma,C_l,camber,X,Y,U,V,panel_origin_g] = computePanelData(v_inf,y_0,
     % computing v_infinity normal and calculating gamma
     v_inf_norm = zeros(N,1);
     for i=1:N
-%         disp(size(y_g))
         v_inf_norm(i) = -dot([v_inf_x, v_inf_y], y_g(i,:));
     end
     gamma = inv(icm) * v_inf_norm;
@@ -114,6 +115,6 @@ function [gamma,C_l,camber,X,Y,U,V,panel_origin_g] = computePanelData(v_inf,y_0,
             V(i,j) = v_inf_y + v_p_g;
         end
     end
-%     lift = 
-%     disp()
+%     lift = sum(gamma)*v_inf*rho;
+%     disp(lift)
 end
